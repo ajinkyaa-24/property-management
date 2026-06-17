@@ -1,6 +1,10 @@
+# pyrefly: ignore [missing-import]
 from sqlalchemy import Column, String, Boolean, Numeric
+
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import relationship
 from db.base import Base
+
 
 class Property(Base):
     __tablename__ = "properties"

@@ -70,3 +70,14 @@ async def update_payment_status(
     await db.commit()
     await db.refresh(db_payment)
     return db_payment
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_payment(
+    id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    db_payment = await get_or_404(db, Payment, id)
+    db_payment.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return None

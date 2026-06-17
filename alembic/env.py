@@ -3,8 +3,13 @@ import sys
 import asyncio
 from logging.config import fileConfig
 
+# pyrefly: ignore [missing-import]
 from sqlalchemy import pool
+
+# pyrefly: ignore [missing-import]
 from sqlalchemy.engine import Connection
+
+# pyrefly: ignore [missing-import]
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
@@ -60,9 +65,7 @@ def run_migrations_offline() -> None:
 
 def do_run_migrations(connection: Connection) -> None:
     context.configure(
-        connection=connection,
-        target_metadata=target_metadata,
-        render_as_batch=True
+        connection=connection, target_metadata=target_metadata, render_as_batch=True
     )
 
     with context.begin_transaction():
@@ -74,7 +77,7 @@ async def run_async_migrations() -> None:
     and associate a connection with the context.
 
     """
-    
+
     configuration = config.get_section(config.config_ini_section, {})
     configuration["sqlalchemy.url"] = config.get_main_option("sqlalchemy.url")
 

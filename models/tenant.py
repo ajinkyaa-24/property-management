@@ -1,6 +1,10 @@
+# pyrefly: ignore [missing-import]
 from sqlalchemy import Column, String
+
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import relationship
 from db.base import Base
+
 
 class Tenant(Base):
     __tablename__ = "tenants"
