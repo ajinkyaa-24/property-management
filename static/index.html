@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Management System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary: #ec4899;
+            --bg: #0f172a;
+            --surface: rgba(30, 41, 59, 0.7);
+            --surface-border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Glassmorphism utilities */
+        .glass {
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--surface-border);
+            border-radius: 16px;
+        }
+
+        /* Navbar */
+        nav {
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--surface-border);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* Buttons */
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        button.outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--text);
+        }
+
+        button.outline:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--surface-border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        /* Tabs & Dashboard Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+            height: calc(100vh - 100px);
+        }
+
+        .sidebar {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            color: var(--text-muted);
+            justify-content: flex-start;
+            padding: 1rem;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .tab-btn.active {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+            border-right: 3px solid var(--primary);
+            border-radius: 12px 0 0 12px;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 1.5rem;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Data Cards */
+        .data-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid var(--surface-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .card h3 {
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .badge.success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .badge.danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+        .card-meta {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        #notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            background: var(--surface);
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            transform: translateX(120%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 2000;
+        }
+
+        #notification.show {
+            transform: translateX(0);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">
+            <i class="fa-solid fa-building-user"></i>
+            PropManage
+        </div>
+        <div class="nav-controls">
+            <div id="userInfo" style="display: none; align-items: center; gap: 1rem;">
+                <span id="userName" style="color: var(--text-muted);"></span>
+                <button class="outline" onclick="logout()">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+            <button id="loginBtnBtn" onclick="openModal('authModal')">
+                <i class="fa-solid fa-lock"></i> Login
+            </button>
+        </div>
+    </nav>
+
+    <!-- Login/Register Modal -->
+    <div id="authModal" class="modal-overlay">
+        <div class="glass modal-content">
+            <div class="modal-header">
+                <h2 id="authTitle">Welcome Back</h2>
+                <p style="color: var(--text-muted); margin-top: 0.5rem;" id="authSubtitle">Sign in to manage your properties</p>
+            </div>
+            
+            <form id="authForm" onsubmit="handleAuth(event)">
+                <div class="form-group" id="emailGroup" style="display: none;">
+                    <label>Email Address</label>
+                    <input type="email" id="email" placeholder="owner@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" required placeholder="admin">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" required placeholder="••••••••••">
+                </div>
+                <button type="submit" style="width: 100%; justify-content: center;" id="authSubmitBtn">
+                    Sign In
+                </button>
+            </form>
+            
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <a href="#" style="color: var(--primary); text-decoration: none;" onclick="toggleAuthMode()" id="authToggle">
+                    Don't have an account? Register
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="container hidden" id="appContainer">
+        <div class="dashboard-grid">
+            
+            <!-- Sidebar -->
+            <div class="glass sidebar">
+                <button class="tab-btn active" onclick="switchTab('properties')">
+                    <i class="fa-solid fa-building"></i> Properties
+                </button>
+                <button class="tab-btn" onclick="switchTab('tenants')">
+                    <i class="fa-solid fa-users"></i> Tenants
+                </button>
+                <button class="tab-btn" onclick="switchTab('agreements')">
+                    <i class="fa-solid fa-file-contract"></i> Agreements
+                </button>
+                <button class="tab-btn" onclick="switchTab('payments')">
+                    <i class="fa-solid fa-money-bill-wave"></i> Payments
+                </button>
+            </div>
+
+            <!-- Content Area -->
+            <div class="glass" style="position: relative; overflow-y: auto;">
+                
+                <!-- Properties Tab -->
+                <div id="propertiesTab" class="tab-content active">
+                    <div class="data-header">
+                        <h2>Property Portfolio</h2>
+                        <button onclick="openModal('propertyModal')"><i class="fa-solid fa-plus"></i> Add Property</button>
+                    </div>
+                    <div class="grid-cards" id="propertiesList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Tenants Tab -->
+                <div id="tenantsTab" class="tab-content">
+                    <div class="data-header">
+                        <h2>Tenants</h2>
+                        <button onclick="openModal('tenantModal')"><i class="fa-solid fa-plus"></i> Add Tenant</button>
+                    </div>
+                    <div class="grid-cards" id="tenantsList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Agreements Tab -->
+                <div id="agreementsTab" class="tab-content">
+                    <div class="data-header">
+                        <h2>Rental Agreements</h2>
+                        <button onclick="openModal('agreementModal'); populateAgreementModal();"><i class="fa-solid fa-plus"></i> New Agreement</button>
+                    </div>
+                    <div class="grid-cards" id="agreementsList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Payments Tab -->
+                <div id="paymentsTab" class="tab-content">
+                    <div class="data-header">
+                        <h2>Payment Records</h2>
+                        <button onclick="openModal('paymentModal'); populatePaymentModal();"><i class="fa-solid fa-plus"></i> Record Payment</button>
+                    </div>
+                    <div class="grid-cards" id="paymentsList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Property Create Modal -->
+    <div id="propertyModal" class="modal-overlay" onclick="closeModalOutside(event, 'propertyModal')">
+        <div class="glass modal-content">
+            <div class="modal-header">
+                <h2>Add New Property</h2>
+            </div>
+            <form onsubmit="createProperty(event)">
+                <div class="form-group">
+                    <label>Address</label>
+                    <input type="text" id="propAddress" required minlength="5">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="propDesc" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Monthly Rent ($)</label>
+                    <input type="number" id="propRent" step="0.01" min="1" required>
+                </div>
+                <button type="submit" style="width: 100%; justify-content: center;">Save Property</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tenant Create Modal -->
+    <div id="tenantModal" class="modal-overlay" onclick="closeModalOutside(event, 'tenantModal')">
+        <div class="glass modal-content">
+            <div class="modal-header">
+                <h2>Add New Tenant</h2>
+            </div>
+            <form onsubmit="createTenant(event)">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" id="tenFirst" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" id="tenLast" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="tenEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" id="tenPhone">
+                </div>
+                <button type="submit" style="width: 100%; justify-content: center;">Save Tenant</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Agreement Create Modal -->
+    <div id="agreementModal" class="modal-overlay" onclick="closeModalOutside(event, 'agreementModal')">
+        <div class="glass modal-content">
+            <div class="modal-header">
+                <h2>Create Rental Agreement</h2>
+            </div>
+            <form onsubmit="createAgreement(event)">
+                <div class="form-group">
+                    <label>Property</label>
+                    <select id="agrProperty" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Tenant</label>
+                    <select id="agrTenant" required></select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" id="agrStart" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="date" id="agrEnd" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Agreed Monthly Rent ($)</label>
+                    <input type="number" id="agrRent" step="0.01" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Deposit Amount ($)</label>
+                    <input type="number" id="agrDeposit" step="0.01" min="0" value="0" required>
+                </div>
+                <button type="submit" style="width: 100%; justify-content: center;">Save Agreement</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payment Create Modal -->
+    <div id="paymentModal" class="modal-overlay" onclick="closeModalOutside(event, 'paymentModal')">
+        <div class="glass modal-content">
+            <div class="modal-header">
+                <h2>Record Payment</h2>
+            </div>
+            <form onsubmit="createPayment(event)">
+                <div class="form-group">
+                    <label>Agreement</label>
+                    <select id="payAgreement" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Amount ($)</label>
+                    <input type="number" id="payAmount" step="0.01" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Payment Date</label>
+                    <input type="date" id="payDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="payStatus">
+                        <option value="confirmed">Confirmed</option>
+                        <option value="pending">Pending</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                </div>
+                <button type="submit" style="width: 100%; justify-content: center;">Record Payment</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="notification"></div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let isLoginMode = true;
+        let accessToken = localStorage.getItem('token') || null;
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            if (accessToken) {
+                checkAuth();
+            } else {
+                openModal('authModal');
+            }
+        });
+
+        // Notifications
+        function showNotification(message, isError = false) {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.style.borderLeftColor = isError ? 'var(--danger)' : 'var(--success)';
+            notif.classList.add('show');
+            setTimeout(() => notif.classList.remove('show'), 3000);
+        }
+
+        // Modals
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+        function closeModalOutside(e, id) {
+            if(e.target.id === id) closeModal(id);
+        }
+
+        // Tabs
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.currentTarget.classList.add('active');
+            document.getElementById(tabId + 'Tab').classList.add('active');
+            
+            if (tabId === 'properties') fetchProperties();
+            if (tabId === 'tenants') fetchTenants();
+            if (tabId === 'agreements') fetchAgreements();
+            if (tabId === 'payments') fetchPayments();
+        }
+
+        // Auth Logic
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('authTitle').innerText = isLoginMode ? 'Welcome Back' : 'Create Account';
+            document.getElementById('authSubtitle').innerText = isLoginMode ? 'Sign in to manage your properties' : 'Register to get started';
+            document.getElementById('authSubmitBtn').innerText = isLoginMode ? 'Sign In' : 'Register';
+            document.getElementById('authToggle').innerText = isLoginMode ? "Don't have an account? Register" : "Already have an account? Sign in";
+            document.getElementById('emailGroup').style.display = isLoginMode ? 'none' : 'block';
+            document.getElementById('email').required = !isLoginMode;
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                if (isLoginMode) {
+                    const formData = new URLSearchParams();
+                    formData.append('username', username);
+                    formData.append('password', password);
+
+                    const res = await fetch(`${API_BASE}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData
+                    });
+                    
+                    if (!res.ok) throw new Error('Invalid credentials');
+                    
+                    const data = await res.json();
+                    accessToken = data.access_token;
+                    localStorage.setItem('token', accessToken);
+                    
+                    closeModal('authModal');
+                    checkAuth();
+                    showNotification('Successfully logged in');
+                } else {
+                    const email = document.getElementById('email').value;
+                    const res = await fetch(`${API_BASE}/auth/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, username, password, is_active: true, is_superuser: false })
+                    });
+                    
+                    if (!res.ok) throw new Error((await res.json()).detail || 'Registration failed');
+                    
+                    showNotification('Account created! Please log in.');
+                    toggleAuthMode();
+                }
+            } catch (err) {
+                showNotification(err.message, true);
+            }
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch(`${API_BASE}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                
+                if (res.ok) {
+                    const user = await res.json();
+                    document.getElementById('loginBtnBtn').style.display = 'none';
+                    document.getElementById('userInfo').style.display = 'flex';
+                    document.getElementById('userName').innerText = `Hello, ${user.username}`;
+                    document.getElementById('appContainer').classList.remove('hidden');
+                    
+                    fetchProperties(); // load initial data
+                } else {
+                    logout();
+                }
+            } catch (err) {
+                logout();
+            }
+        }
+
+        function logout() {
+            accessToken = null;
+            localStorage.removeItem('token');
+            document.getElementById('appContainer').classList.add('hidden');
+            document.getElementById('userInfo').style.display = 'none';
+            document.getElementById('loginBtnBtn').style.display = 'block';
+            openModal('authModal');
+        }
+
+        // API Fetchers
+        async function fetchAPI(endpoint, options = {}) {
+            const res = await fetch(`${API_BASE}${endpoint}`, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (res.status === 401) { logout(); throw new Error('Session expired'); }
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail ? JSON.stringify(err.detail) : 'Request failed');
+            }
+            if (res.status !== 204) return await res.json();
+        }
+
+        async function fetchProperties() {
+            try {
+                const props = await fetchAPI('/properties/');
+                const list = document.getElementById('propertiesList');
+                list.innerHTML = props.length ? '' : '<p style="color:var(--text-muted)">No properties found. Add one!</p>';
+                
+                props.forEach(p => {
+                    list.innerHTML += `
+                        <div class="card">
+                            <h3>${p.address} <span class="badge ${p.is_available ? 'success' : 'danger'}">${p.is_available ? 'Available' : 'Rented'}</span></h3>
+                            <p class="card-meta">${p.description || 'No description provided'}</p>
+                            <div class="card-price">$${p.monthly_rent} <span style="font-size:0.875rem; color:var(--text-muted)">/ month</span></div>
+                        </div>
+                    `;
+                });
+            } catch(e) { showNotification(e.message, true); }
+        }
+
+        async function createProperty(e) {
+            e.preventDefault();
+            const payload = {
+                address: document.getElementById('propAddress').value,
+                description: document.getElementById('propDesc').value,
+                monthly_rent: document.getElementById('propRent').value,
+                is_available: true
+            };
+            try {
+                await fetchAPI('/properties/', { method: 'POST', body: JSON.stringify(payload) });
+                closeModal('propertyModal');
+                e.target.reset();
+                fetchProperties();
+                showNotification('Property added successfully');
+            } catch(e) { showNotification(e.message, true); }
+        }
+
+        async function fetchTenants() {
+            try {
+                const tenants = await fetchAPI('/tenants/');
+                const list = document.getElementById('tenantsList');
+                list.innerHTML = tenants.length ? '' : '<p style="color:var(--text-muted)">No tenants found. Add one!</p>';
+                
+                tenants.forEach(t => {
+                    list.innerHTML += `
+                        <div class="card">
+                            <h3>${t.first_name} ${t.last_name}</h3>
+                            <p class="card-meta"><i class="fa-solid fa-envelope"></i> ${t.email}</p>
+                            <p class="card-meta" style="margin-bottom:0"><i class="fa-solid fa-phone"></i> ${t.phone_number || 'N/A'}</p>
+                        </div>
+                    `;
+                });
+            } catch(e) { showNotification(e.message, true); }
+        }
+
+        async function createTenant(e) {
+            e.preventDefault();
+            const payload = {
+                first_name: document.getElementById('tenFirst').value,
+                last_name: document.getElementById('tenLast').value,
+                email: document.getElementById('tenEmail').value,
+                phone_number: document.getElementById('tenPhone').value || null
+            };
+            try {
+                await fetchAPI('/tenants/', { method: 'POST', body: JSON.stringify(payload) });
+                closeModal('tenantModal');
+                e.target.reset();
+                fetchTenants();
+                showNotification('Tenant added successfully');
+            } catch(e) { showNotification(e.message, true); }
+        }
+
+        async function fetchAgreements() {
+            try {
+                const agreements = await fetchAPI('/agreements/');
+                const list = document.getElementById('agreementsList');
+                list.innerHTML = agreements.length ? '' : '<p style="color:var(--text-muted)">No agreements active.</p>';
+                
+                agreements.forEach(a => {
+                    list.innerHTML += `
+                        <div class="card">
+                            <h3>Agreement <span class="badge ${a.status === 'active' ? 'success' : 'danger'}">${a.status.toUpperCase()}</span></h3>
+                            <p class="card-meta">From: ${a.start_date} To: ${a.end_date}</p>
+                            <div class="card-price">$${a.agreed_rent}</div>
+                        </div>
+                    `;
+                });
+            } catch(e) { showNotification(e.message, true); }
+        }
+
+        async function populateAgreementModal() {
+            try {
+                const props = await fetchAPI('/properties/');
+                const tenants = await fetchAPI('/tenants/');
+                
+                const propSelect = document.getElementById('agrProperty');
+                propSelect.innerHTML = '<option value="">Select a property</option>';
+                props.filter(p => p.is_available).forEach(p => {
+                    propSelect.innerHTML += `<option value="${p.id}">${p.address} ($${p.monthly_rent})</option>`;
+                });
+
+                const tenSelect = document.getElementById('agrTenant');
+                tenSelect.innerHTML = '<option value="">Select a tenant</option>';
+                tenants.forEach(t => {
+                    tenSelect.innerHTML += `<option value="${t.id}">${t.first_name} ${t.last_name}</option>`;
+                });
+            } catch(e) { showNotification(e.message, true); }
+        }
+
+        async function createAgreement(e) {
+            e.preventDefault();
+            const payload = {
+                property_id: document.getElementById('agrProperty').value,
+                tenant_id: document.getElementById('agrTenant').value,
+                start_date: document.getElementById('agrStart').value,
+                end_date: document.getElementById('agrEnd').value,
+                agreed_rent: document.getElementById('agrRent').value,
+                deposit: document.getElementById('agrDeposit').value,
+                status: 'active'
+            };
+            try {
+                await fetchAPI('/agreements/', { method: 'POST', body: JSON.stringify(payload) });
+                closeModal('agreementModal');
+                e.target.reset();
+                fetchAgreements();
+                fetchProperties(); // property status might have changed
+                showNotification('Agreement created successfully');
+            } catch(e) { showNotification(e.message, true); }
+        }
+
+        async function fetchPayments() {
+            try {
+                const payments = await fetchAPI('/payments/');
+                const list = document.getElementById('paymentsList');
+                list.innerHTML = payments.length ? '' : '<p style="color:var(--text-muted)">No payment records.</p>';
+                
+                payments.forEach(p => {
+                    let badgeClass = p.status === 'confirmed' ? 'success' : 'danger';
+                    list.innerHTML += `
+                        <div class="card">
+                            <h3>Payment <span class="badge ${badgeClass}">${p.status.toUpperCase()}</span></h3>
+                            <p class="card-meta"><i class="fa-solid fa-calendar"></i> ${p.payment_date}</p>
+                            <div class="card-price">$${p.amount}</div>
+                        </div>
+                    `;
+                });
+            } catch(e) { showNotification(e.message, true); }
+        }
+
+        async function populatePaymentModal() {
+            try {
+                const agreements = await fetchAPI('/agreements/');
+                const paySelect = document.getElementById('payAgreement');
+                paySelect.innerHTML = '<option value="">Select an agreement</option>';
+                agreements.filter(a => a.status === 'active').forEach(a => {
+                    paySelect.innerHTML += `<option value="${a.id}">Agreement (Rent: $${a.agreed_rent})</option>`;
+                });
+            } catch(e) { showNotification(e.message, true); }
+        }
+
+        async function createPayment(e) {
+            e.preventDefault();
+            const payload = {
+                agreement_id: document.getElementById('payAgreement').value,
+                amount: document.getElementById('payAmount').value,
+                payment_date: document.getElementById('payDate').value,
+                status: document.getElementById('payStatus').value
+            };
+            try {
+                await fetchAPI('/payments/', { method: 'POST', body: JSON.stringify(payload) });
+                closeModal('paymentModal');
+                e.target.reset();
+                fetchPayments();
+                showNotification('Payment recorded successfully');
+            } catch(e) { showNotification(e.message, true); }
+        }
+    </script>
+</body>
+</html>
