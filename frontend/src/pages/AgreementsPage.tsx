@@ -9,8 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Plus } from 'lucide-react';
 import api from '@/services/api';
 
-import { Property } from './PropertiesPage';
-import { Tenant } from './TenantsPage';
+import type { Property } from './PropertiesPage';
+import type { Tenant } from './TenantsPage';
 
 export interface Agreement {
   id: string;

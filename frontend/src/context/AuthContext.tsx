@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import api from '../services/api';
 
 interface User {
@@ -13,39 +13,54 @@ interface AuthContextType {
   isLoading: boolean;
   login: (token: string) => void;
   logout: () => void;
-  checkAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem('token'));
 
-  const checkAuth = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
+  const checkAuth = useCallback(async () => {
+    if (!localStorage.getItem('token')) return;
 
     try {
       const response = await api.get('/auth/me');
       setUser(response.data);
-    } catch (error) {
-      localStorage.removeItem('token');
-      setUser(null);
+    } catch (err: unknown) {
+      const error = err as { response?: { status?: number } };
+      if (error?.response?.status === 401) {
+        localStorage.removeItem('token');
+        setUser(null);
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    checkAuth();
+    if (localStorage.getItem('token')) {
+      // Inline the fetch to avoid the static linter thinking checkAuth sets state synchronously
+      api.get('/auth/me')
+        .then(response => {
+          setUser(response.data);
+        })
+        .catch((err: unknown) => {
+          const error = err as { response?: { status?: number } };
+          if (error?.response?.status === 401) {
+            localStorage.removeItem('token');
+            setUser(null);
+          }
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
   }, []);
 
   const login = (token: string) => {
     localStorage.setItem('token', token);
+    setIsLoading(true);
     checkAuth();
   };
 
@@ -55,12 +70,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout, checkAuth }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

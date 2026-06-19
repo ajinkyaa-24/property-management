@@ -1,7 +1,10 @@
 # pyrefly: ignore [missing-import]
 from sqlalchemy import Column, String, Boolean, Numeric
 
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import relationship
+
+# pyrefly: ignore [missing-import]
 from sqlalchemy import Uuid, ForeignKey
 from db.base import Base
 
@@ -9,7 +12,6 @@ from db.base import Base
 class Property(Base):
     __tablename__ = "properties"
 
-    name = Column(String, nullable=False, server_default="Unnamed Property")
     address = Column(String, nullable=False)
     description = Column(String, nullable=True)
     monthly_rent = Column(Numeric(12, 2), nullable=False)
