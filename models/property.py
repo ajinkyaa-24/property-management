@@ -12,6 +12,7 @@ from db.base import Base
 class Property(Base):
     __tablename__ = "properties"
 
+    name = Column(String, default="Unnamed Property", nullable=False)
     address = Column(String, nullable=False)
     description = Column(String, nullable=True)
     monthly_rent = Column(Numeric(12, 2), nullable=False)

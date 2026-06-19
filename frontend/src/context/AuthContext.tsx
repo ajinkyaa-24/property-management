@@ -21,8 +21,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem('token'));
 
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    setUser(null);
+  }, []);
+
   const checkAuth = useCallback(async () => {
-    if (!localStorage.getItem('token')) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // Proactive JWT Expiry Check
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = JSON.parse(window.atob(base64));
+      if (jsonPayload.exp && Date.now() >= jsonPayload.exp * 1000) {
+        logout();
+        return;
+      }
+    } catch {
+      logout();
+      return;
+    }
 
     try {
       const response = await api.get('/auth/me');
@@ -30,17 +50,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err: unknown) {
       const error = err as { response?: { status?: number } };
       if (error?.response?.status === 401) {
-        localStorage.removeItem('token');
-        setUser(null);
+        logout();
       }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [logout]);
 
   useEffect(() => {
-    if (localStorage.getItem('token')) {
-      // Inline the fetch to avoid the static linter thinking checkAuth sets state synchronously
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Proactive JWT Expiry Check
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = JSON.parse(window.atob(base64));
+        if (jsonPayload.exp && Date.now() >= jsonPayload.exp * 1000) {
+          Promise.resolve().then(() => {
+            logout();
+            setIsLoading(false);
+          });
+          return;
+        }
+      } catch {
+        Promise.resolve().then(() => {
+          logout();
+          setIsLoading(false);
+        });
+        return;
+      }
+
       api.get('/auth/me')
         .then(response => {
           setUser(response.data);
@@ -48,25 +87,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .catch((err: unknown) => {
           const error = err as { response?: { status?: number } };
           if (error?.response?.status === 401) {
-            localStorage.removeItem('token');
-            setUser(null);
+            logout();
           }
         })
         .finally(() => {
           setIsLoading(false);
         });
+    } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsLoading(false);
     }
-  }, []);
+  }, [logout]);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout();
+    };
+    window.addEventListener('auth-unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('auth-unauthorized', handleUnauthorized);
+    };
+  }, [logout]);
 
   const login = (token: string) => {
     localStorage.setItem('token', token);
     setIsLoading(true);
     checkAuth();
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
   };
 
   return (
